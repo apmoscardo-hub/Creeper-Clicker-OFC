@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Creeper Clicker</title>
+  <!-- Fonte estilizada para jogos de aventura/arcade -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Lilita+One&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       VARIÁVEIS E CONFIGURAÇÕES GERAIS
+       ========================================================================== */
+    :root {
+      --sky-top: #0095e8;
+      --sky-mid: #38bdf8;
+      --sky-bottom: #e0f7ff;
+      --gold-light: #fde047;
+      --gold-main: #eab308;
+      --gold-dark: #a16207;
+      --gold-border: #713f12;
+      --wood-dark: #5c3310;
+      --wood-main: #9a5b13;
+      --wood-light: #c87d28;
+      --parchment-bg: #fef9e7;
+      --parchment-border: #d4ac0d;
+      --creeper-green: #22c55e;
+      --creeper-dark: #15803d;
+      --btn-blue-top: #38bdf8;
+      --btn-blue-bot: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Fredoka', sans-serif;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-bottom) 100%);
+    }
+
+    /* ==========================================================================
+       CENÁRIO DE FUNDO (CÉU E NUVENS ESTILIZADAS)
+       ========================================================================== */
+    .sky-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* Raios de sol suaves no fundo */
+    .sunburst {
+      position: absolute;
+      top: 40%;
+      left: 55%;
+      width: 150vmax;
+      height: 150vmax;
+      transform: translate(-50%, -50%);
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.08) 0deg 15deg,
+        transparent 15deg 30deg
+      );
+      animation: rotateSun 90s linear infinite;
+    }
+
+    @keyframes rotateSun {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Nuvens inferiores estilizadas como nas imagens de referência */
+    .clouds-bottom {
+      position: absolute;
+      bottom: -30px;
+      left: 0;
+      width: 100%;
+      height: 38vh;
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       UTILITÁRIOS DE TELA (TRANSIÇÃO ENTRE MENU E JOGO)
+       ========================================================================== */
+    .screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.97);
+    }
+
+    /* ==========================================================================
+       1. TELA INICIAL (INSPIRADA NA SEGUNDA IMAGEM)
+       ========================================================================== */
+    #start-screen {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-around;
+      padding: 2rem 5%;
+    }
+
+    .start-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.75rem;
+      z-index: 15;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    /* Logotipo Estilo Aventura/Medieval com Borda Dourada e Espada */
+    .logo-wrapper {
+      position: relative;
+      padding: 14px 28px;
+      background: linear-gradient(180deg, #166534 0%, #052e16 100%);
+      border: 6px solid var(--gold-main);
+      border-radius: 18px;
+      box-shadow:
+        0 0 0 4px var(--gold-border),
+        0 12px 24px rgba(0, 0, 0, 0.4),
+        inset 0 4px 8px rgba(255, 255, 255, 0.25);
+      text-align: center;
+      transform: rotate(-1.5deg);
+      animation: logoFloat 3.5s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: rotate(-1.5deg) translateY(0px); }
+      50% { transform: rotate(-1.5deg) translateY(-6px); }
+    }
+
+    .logo-sword {
+      position: absolute;
+      left: -34px;
+      top: -28px;
+      width: 84px;
+      height: 84px;
+      filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.45));
+      pointer-events: none;
+    }
+
+    .logo-cursor {
+      position: absolute;
+      right: -28px;
+      top: -24px;
+      width: 72px;
+      height: 72px;
+      filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.45));
+      pointer-events: none;
+    }
+
+    .logo-top-text {
+      font-family: 'Lilita One', cursive;
+      font-size: clamp(2rem, 4.2vw, 3.1rem);
+      letter-spacing: 3px;
+      color: var(--gold-light);
+      text-shadow:
+        0 3px 0 #713f12,
+        -2px -2px 0 #422006,
+        2px -2px 0 #422006,
+        -2px 2px 0 #422006,
+        2px 2px 0 #422006,
+        0 6px 10px rgba(0,0,0,0.5);
+      line-height: 1;
+    }
+
+    .logo-bottom-text {
+      font-family: 'Lilita One', cursive;
+      font-size: clamp(2.6rem, 5.4vw, 4rem);
+      letter-spacing: 2px;
+      background: linear-gradient(180deg, #fef08a 15%, #eab308 60%, #ca8a04 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 0 #713f12) drop-shadow(0 6px 8px rgba(0,0,0,0.6));
+      line-height: 1.05;
+      margin-top: 2px;
+    }
+
+    /* Botões do Menu Principal */
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+      max-width: 290px;
+    }
+
+    .adventure-btn {
+      position: relative;
+      font-family: 'Lilita One', cursive;
+      font-size: 1.75rem;
+      letter-spacing: 1px;
+      color: #ffffff;
+      text-shadow: 0 3px 0 rgba(0, 0, 0, 0.55), 0 0 8px rgba(0,0,0,0.3);
+      padding: 14px 28px;
+      border-radius: 16px;
+      border: 4px solid var(--gold-light);
+      box-shadow:
+        0 0 0 3px var(--gold-border),
+        0 7px 0 var(--gold-border),
+        0 12px 20px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+      text-align: center;
+    }
+
+    .adventure-btn.play-btn {
+      background: linear-gradient(180deg, #4ade80 0%, #16a34a 55%, #15803d 100%);
+    }
+
+    .adventure-btn.credits-btn {
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 55%, #0369a1 100%);
+      font-size: 1.45rem;
+      padding: 11px 24px;
+    }
+
+    .adventure-btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-2px);
+    }
+
+    .adventure-btn:active {
+      transform: translateY(5px);
+      box-shadow:
+        0 0 0 3px var(--gold-border),
+        0 2px 0 var(--gold-border),
+        0 4px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Ilha Flutuante da Tela Inicial (Direita) */
+    .start-right {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 440px;
+      height: 440px;
+      animation: islandBob 4s ease-in-out infinite;
+    }
+
+    @keyframes islandBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-14px); }
+    }
+
+    /* Animação da Mãozinha Clicando na Tela Inicial */
+    .demo-hand-group {
+      transform-origin: 290px 110px;
+      animation: handTapDemo 1.1s ease-in-out infinite;
+    }
+
+    @keyframes handTapDemo {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      45% { transform: translate(-18px, 16px) scale(0.92); }
+      55% { transform: translate(-18px, 16px) scale(0.92); }
+    }
+
+    /* ==========================================================================
+       MODAL DE CRÉDITOS
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .credits-box {
+      background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-main) 100%);
+      border: 5px solid var(--gold-main);
+      box-shadow: 0 0 0 4px var(--gold-border), 0 20px 40px rgba(0,0,0,0.6);
+      border-radius: 22px;
+      padding: 2rem;
+      max-width: 430px;
+      width: 100%;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.active .credits-box {
+      transform: scale(1);
+    }
+
+    .credits-title {
+      font-family: 'Lilita One', cursive;
+      font-size: 2rem;
+      color: var(--gold-light);
+      text-shadow: 0 3px 0 var(--gold-border);
+      margin-bottom: 1rem;
+    }
+
+    .credits-parchment {
+      background: var(--parchment-bg);
+      border: 3px solid var(--parchment-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .credits-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #422006;
+      line-height: 1.5;
+    }
+
+    .yt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 0.6rem;
+      padding: 10px 20px;
+      background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+      color: #fff;
+      text-decoration: none;
+      border: 2px solid #fca5a5;
+      border-radius: 12px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      box-shadow: 0 4px 0 #7f1d1d, 0 6px 12px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+    }
+
+    .yt-badge:hover {
+      filter: brightness(1.12);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #7f1d1d, 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .yt-badge:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #7f1d1d, 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ==========================================================================
+       2. TELA DE JOGO (INSPIRADA NA PRIMEIRA IMAGEM)
+       ========================================================================== */
+    #game-screen {
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 14px;
+      gap: 16px;
+    }
+
+    /* Coluna Esquerda / Central: HUD Superior + Ilha com Creeper + Botão Pólvora */
+    .game-arena {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      min-width: 0;
+    }
+
+    /* Barra Superior de Contadores */
+    .top-hud {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    .counters-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 440px;
+      width: 100%;
+    }
+
+    /* Placa Dourada Principal de Pólvoras (inspirada na barra de moedas do Clicker Heroes) */
+    .gunpowder-banner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(180deg, #78350f 0%, #451a03 100%);
+      border: 4px solid var(--gold-main);
+      box-shadow:
+        0 0 0 3px var(--gold-border),
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      padding: 8px 18px;
+    }
+
+    .gunpowder-count-value {
+      font-family: 'Lilita One', cursive;
+      font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+      color: #ffffff;
+      text-shadow: 0 3px 0 #000000, 0 0 10px rgba(253, 224, 71, 0.35);
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .gunpowder-count-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Sub-painel de Pólvoras por Clique e Pólvoras por Segundo */
+    .stats-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      flex: 1;
+      min-width: 165px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(69, 26, 3, 0.88);
+      border: 3px solid var(--gold-dark);
+      border-radius: 10px;
+      padding: 6px 12px;
+      color: #fef3c7;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-pill-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #fde68a;
+    }
+
+    .stat-pill-val {
+      font-family: 'Lilita One', cursive;
+      font-size: 1.2rem;
+      color: #4ade80;
+      text-shadow: 0 2px 0 #052e16;
+    }
+
+    /* Controles Superiores (Menu Inicial e Som) */
+    .top-utility-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-square-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, var(--gold-main) 0%, var(--gold-dark) 100%);
+      border: 3px solid var(--gold-light);
+      box-shadow: 0 0 0 2px var(--gold-border), 0 4px 0 var(--gold-border);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease;
+    }
+
+    .icon-square-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .icon-square-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 0 0 2px var(--gold-border), 0 1px 0 var(--gold-border);
+    }
+
+    /* Área Central da Ilha + Creeper + Botão Pólvora */
+    .creeper-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+      z-index: 15;
+    }
+
+    .island-interactive {
+      position: relative;
+      width: min(350px, 68vw);
+      height: min(310px, 44vh);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      animation: islandBob 4.2s ease-in-out infinite;
+      transition: transform 0.08s ease;
+    }
+
+    .island-interactive.clicked {
+      transform: scale(0.95) translateY(4px) !important;
+      animation: none;
+    }
+
+    /* Efeito de flash branco no Creeper ao clicar */
+    .creeper-body-group {
+      transition: filter 0.08s ease;
+    }
+    .island-interactive.clicked .creeper-body-group {
+      filter: brightness(1.35);
+    }
+
+    /* Botão Principal "Pólvora" abaixo da Ilha */
+    .polvora-action-btn {
+      margin-top: 8px;
+      margin-bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 44px;
+      font-family: 'Lilita One', cursive;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      letter-spacing: 1.5px;
+      color: #ffffff;
+      text-shadow: 0 3px 0 #14532d, 0 0 10px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #15803d 100%);
+      border: 4px solid var(--gold-light);
+      border-radius: 18px;
+      box-shadow:
+        0 0 0 3px var(--gold-border),
+        0 8px 0 var(--gold-border),
+        0 14px 24px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: transform 0.07s ease, box-shadow 0.07s ease, filter 0.15s ease;
+    }
+
+    .polvora-action-btn:hover {
+      filter: brightness(1.07);
+    }
+
+    .polvora-action-btn:active,
+    .polvora-action-btn.pressed {
+      transform: translateY(6px);
+      box-shadow:
+        0 0 0 3px var(--gold-border),
+        0 2px 0 var(--gold-border),
+        0 6px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ==========================================================================
+       PAINEL DA LOJA NO LADO DIREITO (ESTILO MADEIRA / PERGAMINHO CLICKER HEROES)
+       ========================================================================== */
+    .shop-sidebar {
+      width: 410px;
+      max-width: 44vw;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      z-index: 25;
+    }
+
+    /* Aba Superior da Loja */
+    .shop-tabs {
+      display: flex;
+      padding-left: 14px;
+      gap: 6px;
+    }
+
+    .shop-tab {
+      background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-main) 100%);
+      border: 3px solid var(--gold-main);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 8px 20px;
+      font-family: 'Lilita One', cursive;
+      font-size: 1.2rem;
+      color: var(--gold-light);
+      text-shadow: 0 2px 0 var(--gold-border);
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
+    }
+
+    /* Corpo Principal de Madeira da Loja */
+    .shop-panel {
+      flex: 1;
+      background: linear-gradient(180deg, var(--wood-main) 0%, var(--wood-dark) 100%);
+      border: 4px solid var(--gold-main);
+      box-shadow:
+        0 0 0 3px var(--gold-border),
+        0 12px 28px rgba(0, 0, 0, 0.45),
+        inset 0 2px 8px rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    /* Barra de rolagem estilizada para a loja */
+    .shop-panel::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .shop-panel::-webkit-scrollbar-track {
+      background: rgba(45, 20, 4, 0.65);
+      border-radius: 8px;
+      margin: 6px 0;
+    }
+
+    .shop-panel::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-main) 100%);
+      border: 2px solid var(--gold-border);
+      border-radius: 8px;
+    }
+
+    /* Cabeçalho escuro interno da loja (como na imagem 1) */
+    .shop-header-box {
+      background: rgba(45, 20, 4, 0.85);
+      border: 2px solid #78350f;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fde68a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    /* Cartão de Upgrade em Pergaminho Claro */
+    .upgrade-card {
+      background: linear-gradient(180deg, #fffdf5 0%, #f7ecc6 100%);
+      border: 3px solid #b45309;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 0 #78350f, 0 6px 12px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease;
+    }
+
+    .upgrade-card:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Botão Azul de Compra à Esquerda do Cartão (estilo botão HIRE do Clicker Heroes) */
+    .buy-btn {
+      min-width: 112px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 3px solid var(--gold-light);
+      box-shadow:
+        0 0 0 2px #1e3a8a,
+        0 4px 0 #1e3a8a,
+        0 6px 10px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(180deg, var(--btn-blue-top) 0%, var(--btn-blue-bot) 100%);
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: transform 0.08s ease, filter 0.15s ease;
+    }
+
+    .buy-btn:not(:disabled):hover {
+      filter: brightness(1.1);
+    }
+
+    .buy-btn:not(:disabled):active {
+      transform: translateY(3px);
+      box-shadow:
+        0 0 0 2px #1e3a8a,
+        0 1px 0 #1e3a8a;
+    }
+
+    .buy-btn:disabled {
+      background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+      border-color: #cbd5e1;
+      box-shadow: 0 0 0 2px #334155, 0 3px 0 #334155;
+      cursor: not-allowed;
+      opacity: 0.78;
+    }
+
+    .buy-btn-label {
+      font-family: 'Lilita One', cursive;
+      font-size: 1.05rem;
+      color: var(--gold-light);
+      text-shadow: 0 2px 0 #1e3a8a;
+      letter-spacing: 0.5px;
+    }
+
+    .buy-btn:disabled .buy-btn-label {
+      color: #e2e8f0;
+      text-shadow: 0 2px 0 #334155;
+    }
+
+    .buy-btn-cost {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Lilita One', cursive;
+      font-size: 1.1rem;
+      color: #ffffff;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    /* Informações do Item no Cartão */
+    .upgrade-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .upgrade-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .upgrade-name {
+      font-family: 'Lilita One', cursive;
+      font-size: 1.18rem;
+      color: #451a03;
+      line-height: 1.1;
+    }
+
+    .upgrade-level-badge {
+      background: #78350f;
+      color: var(--gold-light);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .upgrade-desc {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #78350f;
+      line-height: 1.25;
+    }
+
+    .upgrade-icon-box {
+      width: 52px;
+      height: 52px;
+      background: rgba(217, 119, 6, 0.14);
+      border: 2px solid #d97706;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       EFEITOS VISUAIS DINÂMICOS (NÚMEROS FLUTUANTES E PARTÍCULAS)
+       ========================================================================== */
+    .floating-number {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Lilita One', cursive;
+      font-size: 1.75rem;
+      color: #fef08a;
+      text-shadow:
+        0 2px 0 #713f12,
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+      z-index: 90;
+      animation: floatUpFade 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes floatUpFade {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -20%) scale(0.7);
+      }
+      25% {
+        transform: translate(-50%, -60%) scale(1.15);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -145%) scale(0.95);
+      }
+    }
+
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      border-radius: 3px;
+      z-index: 85;
+      animation: particleBurst 0.65s ease-out forwards;
+    }
+
+    @keyframes particleBurst {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(180deg);
+      }
+    }
+
+    /* ==========================================================================
+       RESPONSIVIDADE PARA TELAS MENORES / MOBILE
+       ========================================================================== */
+    @media (max-width: 860px) {
+      #start-screen {
+        flex-direction: column;
+        justify-content: center;
+        gap: 1.2rem;
+        padding: 1rem;
+      }
+
+      .start-right {
+        width: 260px;
+        height: 240px;
+      }
+
+      #game-screen {
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .game-arena {
+        flex: 1.15;
+      }
+
+      .island-interactive {
+        width: 210px;
+        height: 175px;
+      }
+
+      .polvora-action-btn {
+        padding: 10px 32px;
+        font-size: 1.45rem;
+      }
+
+      .shop-sidebar {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 44vh;
+      }
+
+      .shop-panel {
+        padding: 10px;
+        gap: 8px;
+      }
+
+      .upgrade-card {
+        padding: 8px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       FUNDO COMPARTILHADO: CÉU AZUL BRILHANTE E NUVENS NA PARTE INFERIOR
+       ======================================================================== -->
+  <div class="sky-container">
+    <div class="sunburst"></div>
+    <svg class="clouds-bottom" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <!-- Camada traseira de nuvens suaves -->
+      <path fill="rgba(255,255,255,0.65)" d="M0,190 C120,130 240,210 380,160 C520,110 660,190 820,145 C980,100 1120,185 1280,140 C1360,120 1410,145 1440,160 L1440,320 L0,320 Z"></path>
+      <!-- Camada frontal de nuvens fofas -->
+      <path fill="#ffffff" d="M0,240 C90,190 190,235 290,210 C410,180 510,245 640,215 C780,185 890,240 1030,205 C1160,175 1300,230 1440,195 L1440,320 L0,320 Z"></path>
+    </svg>
+  </div>
+
+  <!-- ========================================================================
+       1. TELA INICIAL (INSPIRADA NA SEGUNDA IMAGEM)
+       ======================================================================== -->
+  <section id="start-screen" class="screen">
+    <!-- Lado Esquerdo: Logotipo Medieval + Botões Jogar e Créditos -->
+    <div class="start-left">
+      <div class="logo-wrapper">
+        <!-- Espada de Aventura/Pixel à Esquerda -->
+        <svg class="logo-sword" viewBox="0 0 100 100">
+          <g transform="rotate(-45 50 50)">
+            <!-- Lâmina -->
+            <polygon points="44,8 50,2 56,8 56,64 44,64" fill="#e2e8f0" stroke="#1e293b" stroke-width="3"/>
+            <polygon points="50,2 56,8 56,64 50,64" fill="#94a3b8"/>
+            <!-- Guarda dourada -->
+            <rect x="30" y="64" width="40" height="9" rx="3" fill="#eab308" stroke="#422006" stroke-width="3"/>
+            <!-- Cabo -->
+            <rect x="45" y="73" width="10" height="16" fill="#78350f" stroke="#422006" stroke-width="3"/>
+            <!-- Pomo -->
+            <circle cx="50" cy="92" r="6" fill="#fde047" stroke="#422006" stroke-width="3"/>
+          </g>
+        </svg>
+
+        <!-- Cursor de Seta Branca à Direita -->
+        <svg class="logo-cursor" viewBox="0 0 100 100">
+          <polygon points="22,14 82,44 54,54 44,82" fill="#ffffff" stroke="#0f172a" stroke-width="5" stroke-linejoin="round"/>
+          <polygon points="54,54 44,82 36,52" fill="#cbd5e1"/>
+        </svg>
+
+        <div class="logo-top-text">CREEPER</div>
+        <div class="logo-bottom-text">CLICKER</div>
+      </div>
+
+      <div class="menu-buttons">
+        <button id="btn-play" class="adventure-btn play-btn">JOGAR</button>
+        <button id="btn-credits" class="adventure-btn credits-btn">CRÉDITOS</button>
+      </div>
+    </div>
+
+    <!-- Lado Direito: Ilha Flutuante Isométrica com Creeper e Mãozinha Clicando -->
+    <div class="start-right">
+      <svg viewBox="0 0 420 400" width="100%" height="100%">
+        <defs>
+          <linearGradient id="earthGradLeft" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#d97706"/>
+            <stop offset="100%" stop-color="#78350f"/>
+          </linearGradient>
+          <linearGradient id="earthGradRight" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#b45309"/>
+            <stop offset="100%" stop-color="#451a03"/>
+          </linearGradient>
+          <linearGradient id="grassTopGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a3e635"/>
+            <stop offset="100%" stop-color="#65a30d"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Base Rochosa / Terra Dourada da Ilha Isométrica -->
+        <polygon points="65,220 210,295 210,382 140,345 115,310 85,280" fill="url(#earthGradLeft)" stroke="#451a03" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="355,220 210,295 210,382 280,345 305,310 335,280" fill="url(#earthGradRight)" stroke="#451a03" stroke-width="3" stroke-linejoin="round"/>
+        <!-- Detalhes de pedras na ilha -->
+        <polygon points="120,265 155,282 145,320 115,295" fill="#f59e0b" opacity="0.45"/>
+        <polygon points="265,275 300,258 290,300 255,318" fill="#92400e" opacity="0.5"/>
+
+        <!-- Topo de Grama Verde Isométrica -->
+        <polygon points="210,148 362,218 210,292 58,218" fill="url(#grassTopGrad)" stroke="#365314" stroke-width="3" stroke-linejoin="round"/>
+        <!-- Borda de grama caída -->
+        <path d="M58,218 Q95,250 130,252 Q165,282 210,292 Q255,282 290,252 Q325,250 362,218 L362,232 Q325,264 290,264 Q255,294 210,304 Q165,294 130,264 Q95,264 58,232 Z" fill="#4d7c0f"/>
+
+        <!-- Sombra do Creeper na grama -->
+        <ellipse cx="205" cy="222" rx="46" ry="20" fill="rgba(20, 83, 45, 0.35)"/>
+
+        <!-- CREEPER ESTILIZADO EM CIMA DA ILHA -->
+        <g transform="translate(155, 72)">
+          <!-- Pés -->
+          <rect x="14" y="118" width="28" height="28" rx="4" fill="#15803d" stroke="#052e16" stroke-width="3"/>
+          <rect x="58" y="118" width="28" height="28" rx="4" fill="#166534" stroke="#052e16" stroke-width="3"/>
+          <!-- Tronco -->
+          <rect x="22" y="64" width="56" height="60" rx="5" fill="#22c55e" stroke="#052e16" stroke-width="3"/>
+          <!-- Textura pixelada no tronco -->
+          <rect x="28" y="72" width="12" height="12" fill="#4ade80" opacity="0.6"/>
+          <rect x="58" y="92" width="14" height="14" fill="#16a34a" opacity="0.7"/>
+          <!-- Cabeça -->
+          <rect x="12" y="4" width="76" height="66" rx="7" fill="#4ade80" stroke="#052e16" stroke-width="3.5"/>
+          <!-- Sombreamento lateral da cabeça -->
+          <rect x="72" y="6" width="14" height="62" rx="4" fill="#22c55e" opacity="0.7"/>
+          <!-- Rosto clássico do Creeper -->
+          <!-- Olhos -->
+          <rect x="23" y="20" width="16" height="16" fill="#052e16"/>
+          <rect x="57" y="20" width="16" height="16" fill="#052e16"/>
+          <!-- Boca -->
+          <rect x="39" y="36" width="18" height="10" fill="#052e16"/>
+          <rect x="31" y="42" width="34" height="14" fill="#052e16"/>
+          <rect x="31" y="54" width="10" height="8" fill="#052e16"/>
+          <rect x="55" y="54" width="10" height="8" fill="#052e16"/>
+        </g>
+
+        <!-- Mãozinha Branca com Rastro de Movimento (como na segunda imagem) -->
+        <g class="demo-hand-group">
+          <!-- Rastros translúcidos -->
+          <g opacity="0.22" transform="translate(46, -24)">
+            <path d="M270,115 L292,102 L308,118 L286,133 Z" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+          </g>
+          <g opacity="0.42" transform="translate(30, -16)">
+            <path d="M270,115 L292,102 L308,118 L286,133 Z" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+          </g>
+          <g opacity="0.68" transform="translate(15, -8)">
+            <path d="M270,115 L292,102 L308,118 L286,133 Z" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+          </g>
+          <!-- Mão principal apontando -->
+          <g transform="translate(245, 92) rotate(-25)">
+            <path d="M12,24 L36,24 C40,24 42,29 38,31 L26,33 L44,35 C48,36 48,41 43,42 L26,43 L41,46 C45,47 44,52 39,52 L24,52 L34,56 C37,58 35,62 31,61 L10,55 C4,53 2,46 2,39 L2,30 C2,26 7,24 12,24 Z" fill="#ffffff" stroke="#0f172a" stroke-width="3.5" stroke-linejoin="round"/>
+            <!-- Punho azul -->
+            <rect x="42" y="26" width="14" height="32" rx="4" fill="#bae6fd" stroke="#0f172a" stroke-width="3"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       MODAL DE CRÉDITOS (@Falange_Editz)
+       ======================================================================== -->
+  <div id="credits-modal" class="modal-overlay">
+    <div class="credits-box">
+      <h2 class="credits-title">CRÉDITOS</h2>
+      <div class="credits-parchment">
+        <p class="credits-text">Youtube do criador:</p>
+        <a id="yt-channel-link" href="https://www.youtube.com/@Falange_Editz" target="_blank" rel="noopener noreferrer" class="yt-badge" title="Abrir canal @Falange_Editz no YouTube">
+          <!-- Ícone Play YouTube -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/>
+          </svg>
+          <span>@Falange_Editz</span>
+        </a>
+      </div>
+      <button id="btn-close-credits" class="adventure-btn play-btn" style="font-size: 1.35rem; padding: 10px 34px;">FECHAR</button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       2. TELA DE JOGO (INSPIRADA NA PRIMEIRA IMAGEM)
+       ======================================================================== -->
+  <main id="game-screen" class="screen hidden">
+    <!-- ÁREA ESQUERDA / CENTRAL: CONTADORES + ILHA DO CREEPER + BOTÃO PÓLVORA -->
+    <div class="game-arena">
+      <!-- Barra Superior de Status -->
+      <header class="top-hud">
+        <div class="counters-stack">
+          <!-- Contador Principal de Pólvoras -->
+          <div class="gunpowder-banner">
+            <!-- Ícone SVG de Pólvora Pixelada/Estilizada -->
+            <svg width="46" height="46" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="21" fill="#334155" stroke="#fde047" stroke-width="2.5"/>
+              <!-- Monte de pólvora pixelada cinza -->
+              <polygon points="10,34 16,20 24,14 32,20 38,34" fill="#94a3b8"/>
+              <polygon points="14,34 20,22 28,22 34,34" fill="#cbd5e1"/>
+              <rect x="21" y="13" width="6" height="5" fill="#e2e8f0"/>
+              <rect x="16" y="25" width="5" height="5" fill="#475569"/>
+              <rect x="26" y="27" width="6" height="5" fill="#64748b"/>
+              <circle cx="15" cy="18" r="2" fill="#cbd5e1"/>
+              <circle cx="33" cy="17" r="2" fill="#94a3b8"/>
+            </svg>
+            <div>
+              <div id="polvora-total" class="gunpowder-count-value">0</div>
+              <div class="gunpowder-count-label">Pólvoras</div>
+            </div>
+          </div>
+
+          <!-- Sub-contadores: Pólvoras por clique e Pólvoras por segundo -->
+          <div class="stats-bar">
+            <div class="stat-pill">
+              <span class="stat-pill-label">Pólvoras por clique:</span>
+              <span id="polvora-per-click" class="stat-pill-val">1</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-pill-label">Pólvoras por segundo:</span>
+              <span id="polvora-per-sec" class="stat-pill-val">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botões de Voltar ao Menu e Som -->
+        <div class="top-utility-btns">
+          <button id="btn-sound" class="icon-square-btn" title="Alternar Som">
+            <svg id="icon-sound-on" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+            <svg id="icon-sound-off" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+          </button>
+          <button id="btn-back-menu" class="icon-square-btn" title="Voltar ao Menu Inicial">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Palco Central: Ilha Flutuante com Creeper + Botão "Pólvora" -->
+      <div class="creeper-stage">
+        <div id="creeper-island" class="island-interactive" title="Clique no Creeper para coletar Pólvora!">
+          <svg viewBox="0 0 400 370" width="100%" height="100%">
+            <!-- Base Rochosa / Terra Dourada -->
+            <polygon points="55,205 200,280 200,362 130,325 105,290 75,260" fill="url(#earthGradLeft)" stroke="#451a03" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="345,205 200,280 200,362 270,325 295,290 325,260" fill="url(#earthGradRight)" stroke="#451a03" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="110,250 145,268 135,305 105,280" fill="#f59e0b" opacity="0.45"/>
+            <polygon points="255,260 290,242 280,285 245,302" fill="#92400e" opacity="0.5"/>
+
+            <!-- Topo de Grama Verde -->
+            <polygon points="200,135 352,205 200,278 48,205" fill="url(#grassTopGrad)" stroke="#365314" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M48,205 Q85,236 120,238 Q155,268 200,278 Q245,268 280,238 Q315,236 352,205 L352,218 Q315,250 280,250 Q245,280 200,290 Q155,280 120,250 Q85,250 48,218 Z" fill="#4d7c0f"/>
+
+            <!-- Sombra do Creeper -->
+            <ellipse cx="200" cy="208" rx="50" ry="21" fill="rgba(20, 83, 45, 0.35)"/>
+
+            <!-- CREEPER INTERATIVO -->
+            <g class="creeper-body-group" transform="translate(148, 52)">
+              <!-- Pés -->
+              <rect x="14" y="122" width="30" height="30" rx="4" fill="#15803d" stroke="#052e16" stroke-width="3.5"/>
+              <rect x="60" y="122" width="30" height="30" rx="4" fill="#166534" stroke="#052e16" stroke-width="3.5"/>
+              <!-- Tronco -->
+              <rect x="22" y="66" width="60" height="62" rx="6" fill="#22c55e" stroke="#052e16" stroke-width="3.5"/>
+              <rect x="28" y="74" width="14" height="14" fill="#4ade80" opacity="0.65"/>
+              <rect x="60" y="95" width="15" height="15" fill="#16a34a" opacity="0.75"/>
+              <!-- Cabeça -->
+              <rect x="10" y="2" width="84" height="70" rx="8" fill="#4ade80" stroke="#052e16" stroke-width="3.5"/>
+              <rect x="76" y="4" width="16" height="66" rx="4" fill="#22c55e" opacity="0.7"/>
+              <!-- Olhos -->
+              <rect x="23" y="19" width="17" height="17" fill="#052e16"/>
+              <rect x="60" y="19" width="17" height="17" fill="#052e16"/>
+              <!-- Boca -->
+              <rect x="40" y="36" width="20" height="11" fill="#052e16"/>
+              <rect x="31" y="43" width="38" height="15" fill="#052e16"/>
+              <rect x="31" y="56" width="11" height="9" fill="#052e16"/>
+              <rect x="58" y="56" width="11" height="9" fill="#052e16"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Botão Proeminente Escrito "Pólvora" -->
+        <button id="btn-polvora" class="polvora-action-btn">
+          <svg width="30" height="30" viewBox="0 0 48 48">
+            <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#cbd5e1" stroke="#1e293b" stroke-width="3"/>
+            <polygon points="15,38 21,22 27,22 33,38" fill="#f1f5f9"/>
+          </svg>
+          <span>Pólvora</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         LADO DIREITO: LOJA DE PÓLVORA (ESTILO PAINEL DE MADEIRA / PERGAMINHO)
+         ====================================================================== -->
+    <aside class="shop-sidebar">
+      <div class="shop-tabs">
+        <div class="shop-tab">Loja de Pólvora</div>
+      </div>
+
+      <div class="shop-panel">
+        <!-- Cabeçalho Informativo da Loja -->
+        <div class="shop-header-box">
+          <span>Melhorias de Produção</span>
+          <span id="shop-pps-summary">0 / seg</span>
+        </div>
+
+        <!-- OPÇÃO 1: +1 Pólvora (custa 60 pólvoras, aumenta pólvora por clique) -->
+        <div class="upgrade-card">
+          <button id="buy-click-upgrade" class="buy-btn" disabled>
+            <span class="buy-btn-label">COMPRAR</span>
+            <span class="buy-btn-cost">
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+              </svg>
+              <span id="cost-click-upgrade">60</span>
+            </span>
+          </button>
+
+          <div class="upgrade-info">
+            <div class="upgrade-title-row">
+              <span class="upgrade-name">+1 Pólvora</span>
+              <span id="lvl-click-upgrade" class="upgrade-level-badge">Nível 0</span>
+            </div>
+            <p class="upgrade-desc">Aumenta em <strong>+1</strong> o número de pólvoras ganhas por clique.</p>
+          </div>
+
+          <div class="upgrade-icon-box" title="+1 Pólvora por clique">
+            <!-- Ícone de Pólvora + Seta para Cima -->
+            <svg width="36" height="36" viewBox="0 0 48 48">
+              <polygon points="6,40 14,22 22,15 30,22 38,40" fill="#94a3b8" stroke="#334155" stroke-width="2.5"/>
+              <polygon points="12,40 18,26 26,26 32,40" fill="#cbd5e1"/>
+              <path d="M36,22 L36,8 M30,14 L36,8 L42,14" stroke="#16a34a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 2: Pólvora instantânea (custa 100 pólvoras, aumenta pólvora por segundo) -->
+        <div class="upgrade-card">
+          <button id="buy-auto-upgrade" class="buy-btn" disabled>
+            <span class="buy-btn-label">COMPRAR</span>
+            <span class="buy-btn-cost">
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+              </svg>
+              <span id="cost-auto-upgrade">100</span>
+            </span>
+          </button>
+
+          <div class="upgrade-info">
+            <div class="upgrade-title-row">
+              <span class="upgrade-name">Pólvora instantânea</span>
+              <span id="lvl-auto-upgrade" class="upgrade-level-badge">Nível 0</span>
+            </div>
+            <p class="upgrade-desc">Gera automaticamente <strong>+1 pólvora</strong> por segundo.</p>
+          </div>
+
+          <div class="upgrade-icon-box" title="Pólvora automática por segundo">
+            <!-- Ícone de Dinamite / Relógio de Pólvora -->
+            <svg width="36" height="36" viewBox="0 0 48 48">
+              <rect x="12" y="16" width="8" height="24" rx="2" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+              <rect x="20" y="14" width="8" height="26" rx="2" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"/>
+              <rect x="28" y="16" width="8" height="24" rx="2" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+              <rect x="11" y="24" width="26" height="5" fill="#1e293b"/>
+              <!-- Pavio com faísca -->
+              <path d="M24,14 Q24,7 31,6" stroke="#78350f" stroke-width="3" fill="none"/>
+              <circle cx="33" cy="6" r="4" fill="#fde047"/>
+              <circle cx="33" cy="6" r="2" fill="#f97316"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 3: Mais Pólvora (custa 250 pólvoras, aumenta pólvora por clique em 5) -->
+        <div class="upgrade-card">
+          <button id="buy-mais-polvora" class="buy-btn" disabled>
+            <span class="buy-btn-label">COMPRAR</span>
+            <span class="buy-btn-cost">
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+              </svg>
+              <span id="cost-mais-polvora">250</span>
+            </span>
+          </button>
+
+          <div class="upgrade-info">
+            <div class="upgrade-title-row">
+              <span class="upgrade-name">Mais Pólvora</span>
+              <span id="lvl-mais-polvora" class="upgrade-level-badge">Nível 0</span>
+            </div>
+            <p class="upgrade-desc">Aumenta em <strong>+5</strong> o número de pólvoras ganhas por clique.</p>
+          </div>
+
+          <div class="upgrade-icon-box" title="+5 Pólvora por clique">
+            <!-- Ícone de Saco de Pólvora Reforçado -->
+            <svg width="36" height="36" viewBox="0 0 48 48">
+              <path d="M16,14 L32,14 L29,19 L37,26 C39,34 35,41 24,41 C13,41 9,34 11,26 L19,19 Z" fill="#a16207" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
+              <rect x="18" y="17" width="12" height="3.5" rx="1.5" fill="#fde047" stroke="#451a03" stroke-width="1.5"/>
+              <polygon points="18,34 24,25 30,34" fill="#cbd5e1"/>
+              <circle cx="24" cy="24" r="2.5" fill="#e2e8f0"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 4: Pólvora Infinita (custa 400 pólvoras, aumenta pólvora por segundo em 5) -->
+        <div class="upgrade-card">
+          <button id="buy-polvora-infinita" class="buy-btn" disabled>
+            <span class="buy-btn-label">COMPRAR</span>
+            <span class="buy-btn-cost">
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+              </svg>
+              <span id="cost-polvora-infinita">400</span>
+            </span>
+          </button>
+
+          <div class="upgrade-info">
+            <div class="upgrade-title-row">
+              <span class="upgrade-name">Pólvora Infinita</span>
+              <span id="lvl-polvora-infinita" class="upgrade-level-badge">Nível 0</span>
+            </div>
+            <p class="upgrade-desc">Gera automaticamente <strong>+5 pólvoras</strong> por segundo.</p>
+          </div>
+
+          <div class="upgrade-icon-box" title="+5 Pólvora por segundo">
+            <!-- Ícone de Barril de Pólvora com Símbolo Infinito -->
+            <svg width="36" height="36" viewBox="0 0 48 48">
+              <rect x="11" y="10" width="26" height="28" rx="5" fill="#9a3412" stroke="#431407" stroke-width="2.5"/>
+              <line x1="11" y1="17" x2="37" y2="17" stroke="#334155" stroke-width="3"/>
+              <line x1="11" y1="31" x2="37" y2="31" stroke="#334155" stroke-width="3"/>
+              <path d="M17,24 C17,21 21,21 24,24 C27,27 31,27 31,24 C31,21 27,21 24,24 C21,27 17,27 17,24 Z" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 5: Pilha de Pólvora (custa 475 pólvoras, aumenta pólvora por clique em 10) -->
+        <div class="upgrade-card">
+          <button id="buy-pilha-polvora" class="buy-btn" disabled>
+            <span class="buy-btn-label">COMPRAR</span>
+            <span class="buy-btn-cost">
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+              </svg>
+              <span id="cost-pilha-polvora">475</span>
+            </span>
+          </button>
+
+          <div class="upgrade-info">
+            <div class="upgrade-title-row">
+              <span class="upgrade-name">Pilha de Pólvora</span>
+              <span id="lvl-pilha-polvora" class="upgrade-level-badge">Nível 0</span>
+            </div>
+            <p class="upgrade-desc">Aumenta em <strong>+10</strong> o número de pólvoras ganhas por clique.</p>
+          </div>
+
+          <div class="upgrade-icon-box" title="+10 Pólvora por clique">
+            <!-- Ícone de Grande Monte / Pilha de Pólvora -->
+            <svg width="36" height="36" viewBox="0 0 48 48">
+              <polygon points="4,40 14,22 24,26 34,20 44,40" fill="#64748b" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+              <polygon points="10,40 24,12 38,40" fill="#94a3b8" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+              <polygon points="16,40 24,20 32,40" fill="#e2e8f0"/>
+              <circle cx="24" cy="9" r="2.5" fill="#4ade80"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 6: Sequência de Pólvora (custa 550 pólvoras, aumenta pólvora por segundo em 10) -->
+        <div class="upgrade-card">
+          <button id="buy-sequencia-polvora" class="buy-btn" disabled>
+            <span class="buy-btn-label">COMPRAR</span>
+            <span class="buy-btn-cost">
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <polygon points="8,38 16,18 24,10 32,18 40,38" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
+              </svg>
+              <span id="cost-sequencia-polvora">550</span>
+            </span>
+          </button>
+
+          <div class="upgrade-info">
+            <div class="upgrade-title-row">
+              <span class="upgrade-name">Sequência de Pólvora</span>
+              <span id="lvl-sequencia-polvora" class="upgrade-level-badge">Nível 0</span>
+            </div>
+            <p class="upgrade-desc">Gera automaticamente <strong>+10 pólvoras</strong> por segundo.</p>
+          </div>
+
+          <div class="upgrade-icon-box" title="+10 Pólvora por segundo">
+            <!-- Ícone de Sequência / Corrente de Explosivos e Faíscas -->
+            <svg width="36" height="36" viewBox="0 0 48 48">
+              <path d="M8,34 Q18,34 24,24 T40,14" fill="none" stroke="#475569" stroke-width="4" stroke-linecap="round" stroke-dasharray="4 3"/>
+              <circle cx="11" cy="34" r="5" fill="#22c55e" stroke="#052e16" stroke-width="2"/>
+              <circle cx="24" cy="24" r="5.5" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+              <circle cx="37" cy="14" r="6" fill="#fde047" stroke="#a16207" stroke-width="2"/>
+              <circle cx="37" cy="14" r="2.5" fill="#f97316"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ========================================================================
+       LÓGICA DO JOGO, ANIMAÇÕES E ÁUDIO SINTETIZADO (WEB AUDIO API)
+       ======================================================================== -->
+  <script>
+    /**
+     * Sistema de Áudio Sintetizado via Web Audio API
+     * Gera efeitos sonoros leves sem depender de arquivos externos.
+     */
+    class SoundSystem {
+      constructor() {
+        this.enabled = true;
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playClick() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(340, now);
+        osc.frequency.exponentialRampToValueAtTime(620, now + 0.065);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+
+      playBuy() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99]; // Dó, Mi, Sol
+
+        notes.forEach((freq, index) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const startTime = now + index * 0.055;
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+
+          gain.gain.setValueAtTime(0.18, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.14);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.15);
+        });
+      }
+
+      playMenuButton() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(580, now + 0.08);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }
+    }
+
+    const sound = new SoundSystem();
+
+    /**
+     * Estado Principal do Jogo "Creeper Clicker"
+     */
+    const gameState = {
+      polvoras: 0,
+      polvoraPorClique: 1,
+      polvoraPorSegundo: 0,
+      upgrades: {
+        click1: {
+          tipo: 'clique',
+          ganho: 1,
+          nivel: 0,
+          custoBase: 60,
+          custoAtual: 60,
+          multiplicador: 1.18
+        },
+        auto1: {
+          tipo: 'segundo',
+          ganho: 1,
+          nivel: 0,
+          custoBase: 100,
+          custoAtual: 100,
+          multiplicador: 1.2
+        },
+        maisPolvora: {
+          tipo: 'clique',
+          ganho: 5,
+          nivel: 0,
+          custoBase: 250,
+          custoAtual: 250,
+          multiplicador: 1.18
+        },
+        polvoraInfinita: {
+          tipo: 'segundo',
+          ganho: 5,
+          nivel: 0,
+          custoBase: 400,
+          custoAtual: 400,
+          multiplicador: 1.2
+        },
+        pilhaPolvora: {
+          tipo: 'clique',
+          ganho: 10,
+          nivel: 0,
+          custoBase: 475,
+          custoAtual: 475,
+          multiplicador: 1.18
+        },
+        sequenciaPolvora: {
+          tipo: 'segundo',
+          ganho: 10,
+          nivel: 0,
+          custoBase: 550,
+          custoAtual: 550,
+          multiplicador: 1.2
+        }
+      }
+    };
+
+    // Referências aos Elementos do DOM
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const creditsModal = document.getElementById('credits-modal');
+
+    const btnPlay = document.getElementById('btn-play');
+    const btnCredits = document.getElementById('btn-credits');
+    const btnCloseCredits = document.getElementById('btn-close-credits');
+    const ytChannelLink = document.getElementById('yt-channel-link');
+    const btnBackMenu = document.getElementById('btn-back-menu');
+    const btnSound = document.getElementById('btn-sound');
+
+    const creeperIsland = document.getElementById('creeper-island');
+    const btnPolvora = document.getElementById('btn-polvora');
+
+    const elPolvoraTotal = document.getElementById('polvora-total');
+    const elPolvoraPerClick = document.getElementById('polvora-per-click');
+    const elPolvoraPerSec = document.getElementById('polvora-per-sec');
+    const elShopPpsSummary = document.getElementById('shop-pps-summary');
+
+    // Mapeamento dos elementos DOM de cada item da loja
+    const shopElements = {
+      click1: {
+        btn: document.getElementById('buy-click-upgrade'),
+        cost: document.getElementById('cost-click-upgrade'),
+        lvl: document.getElementById('lvl-click-upgrade')
+      },
+      auto1: {
+        btn: document.getElementById('buy-auto-upgrade'),
+        cost: document.getElementById('cost-auto-upgrade'),
+        lvl: document.getElementById('lvl-auto-upgrade')
+      },
+      maisPolvora: {
+        btn: document.getElementById('buy-mais-polvora'),
+        cost: document.getElementById('cost-mais-polvora'),
+        lvl: document.getElementById('lvl-mais-polvora')
+      },
+      polvoraInfinita: {
+        btn: document.getElementById('buy-polvora-infinita'),
+        cost: document.getElementById('cost-polvora-infinita'),
+        lvl: document.getElementById('lvl-polvora-infinita')
+      },
+      pilhaPolvora: {
+        btn: document.getElementById('buy-pilha-polvora'),
+        cost: document.getElementById('cost-pilha-polvora'),
+        lvl: document.getElementById('lvl-pilha-polvora')
+      },
+      sequenciaPolvora: {
+        btn: document.getElementById('buy-sequencia-polvora'),
+        cost: document.getElementById('cost-sequencia-polvora'),
+        lvl: document.getElementById('lvl-sequencia-polvora')
+      }
+    };
+
+    /**
+     * Formata números grandes para leitura limpa em Português
+     */
+    function formatNumber(num) {
+      return Math.floor(num).toLocaleString('pt-BR');
+    }
+
+    /**
+     * Atualiza toda a interface (contadores, preços e estados dos botões da loja)
+     */
+    function updateUI() {
+      const currentTotal = Math.floor(gameState.polvoras);
+
+      elPolvoraTotal.textContent = formatNumber(currentTotal);
+      elPolvoraPerClick.textContent = formatNumber(gameState.polvoraPorClique);
+      elPolvoraPerSec.textContent = formatNumber(gameState.polvoraPorSegundo);
+      elShopPpsSummary.textContent = `${formatNumber(gameState.polvoraPorSegundo)} / seg`;
+
+      // Atualiza todos os itens da loja dinamicamente
+      Object.keys(gameState.upgrades).forEach((key) => {
+        const item = gameState.upgrades[key];
+        const dom = shopElements[key];
+
+        dom.cost.textContent = formatNumber(item.custoAtual);
+        dom.lvl.textContent = `Nível ${item.nivel}`;
+        dom.btn.disabled = currentTotal < item.custoAtual;
+      });
+    }
+
+    /**
+     * Cria número flutuante (+X) e partículas de pólvora no local do clique
+     */
+    function spawnClickEffects(x, y, amount) {
+      // Número flutuante
+      const floater = document.createElement('div');
+      floater.className = 'floating-number';
+      floater.textContent = `+${formatNumber(amount)}`;
+      floater.style.left = `${x}px`;
+      floater.style.top = `${y}px`;
+      document.body.appendChild(floater);
+
+      floater.addEventListener('animationend', () => {
+        floater.remove();
+      });
+
+      // Partículas de pólvora (tons de cinza e verde creeper)
+      const colors = ['#94a3b8', '#cbd5e1', '#475569', '#4ade80', '#fde047'];
+      const particleCount = 7;
+
+      for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = 6 + Math.random() * 6;
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() * 0.5);
+        const distance = 45 + Math.random() * 55;
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance - 20;
+
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        p.style.left = `${x}px`;
+        p.style.top = `${y}px`;
+        p.style.setProperty('--dx', `${dx}px`);
+        p.style.setProperty('--dy', `${dy}px`);
+
+        document.body.appendChild(p);
+        p.addEventListener('animationend', () => {
+          p.remove();
+        });
+      }
+    }
+
+    /**
+     * Ação principal ao clicar no Creeper ou no botão "Pólvora"
+     */
+    function handleCollectPolvora(event) {
+      const gain = gameState.polvoraPorClique;
+      gameState.polvoras += gain;
+      sound.playClick();
+
+      // Animação de impacto na ilha do Creeper
+      creeperIsland.classList.remove('clicked');
+      void creeperIsland.offsetWidth; // Reinicia animação
+      creeperIsland.classList.add('clicked');
+      setTimeout(() => {
+        creeperIsland.classList.remove('clicked');
+      }, 95);
+
+      // Determina coordenadas para o efeito visual
+      let clientX, clientY;
+      if (event && typeof event.clientX === 'number' && event.clientX > 0) {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      } else {
+        const rect = creeperIsland.getBoundingClientRect();
+        clientX = rect.left + rect.width / 2 + (Math.random() * 40 - 20);
+        clientY = rect.top + rect.height / 2;
+      }
+
+      spawnClickEffects(clientX, clientY, gain);
+      updateUI();
+    }
+
+    /**
+     * Função unificada para comprar qualquer melhoria da loja
+     */
+    function buyUpgrade(upgradeKey) {
+      const item = gameState.upgrades[upgradeKey];
+      if (!item) return;
+
+      if (Math.floor(gameState.polvoras) >= item.custoAtual) {
+        gameState.polvoras -= item.custoAtual;
+        item.nivel += 1;
+
+        if (item.tipo === 'clique') {
+          gameState.polvoraPorClique += item.ganho;
+        } else if (item.tipo === 'segundo') {
+          gameState.polvoraPorSegundo += item.ganho;
+        }
+
+        item.custoAtual = Math.round(item.custoBase * Math.pow(item.multiplicador, item.nivel));
+
+        sound.playBuy();
+        updateUI();
+      }
+    }
+
+    // ========================================================================
+    // EVENTOS DE NAVEGAÇÃO E INTERAÇÃO
+    // ========================================================================
+    btnPlay.addEventListener('click', () => {
+      sound.playMenuButton();
+      startScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      updateUI();
+    });
+
+    btnBackMenu.addEventListener('click', () => {
+      sound.playMenuButton();
+      gameScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+
+    btnCredits.addEventListener('click', () => {
+      sound.playMenuButton();
+      creditsModal.classList.add('active');
+    });
+
+    btnCloseCredits.addEventListener('click', () => {
+      sound.playMenuButton();
+      creditsModal.classList.remove('active');
+    });
+
+    ytChannelLink.addEventListener('click', () => {
+      sound.playMenuButton();
+    });
+
+    creditsModal.addEventListener('click', (e) => {
+      if (e.target === creditsModal) {
+        creditsModal.classList.remove('active');
+      }
+    });
+
+    btnSound.addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      document.getElementById('icon-sound-on').style.display = sound.enabled ? 'block' : 'none';
+      document.getElementById('icon-sound-off').style.display = sound.enabled ? 'none' : 'block';
+      if (sound.enabled) sound.playMenuButton();
+    });
+
+    // Cliques no Creeper e no botão "Pólvora"
+    creeperIsland.addEventListener('click', handleCollectPolvora);
+    btnPolvora.addEventListener('click', handleCollectPolvora);
+
+    // Atalho de teclado (Espaço ou Enter no jogo)
+    window.addEventListener('keydown', (e) => {
+      if (!gameScreen.classList.contains('hidden') && !creditsModal.classList.contains('active')) {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          btnPolvora.classList.add('pressed');
+          handleCollectPolvora();
+          setTimeout(() => btnPolvora.classList.remove('pressed'), 80);
+        }
+      }
+    });
+
+    // Botões da Loja
+    Object.keys(shopElements).forEach((key) => {
+      shopElements[key].btn.addEventListener('click', () => buyUpgrade(key));
+    });
+
+    // ========================================================================
+    // LOOP DE PRODUÇÃO PASSIVA (PÓLVORAS POR SEGUNDO)
+    // ========================================================================
+    let lastTimestamp = performance.now();
+
+    function gameLoop(timestamp) {
+      const deltaSeconds = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      if (gameState.polvoraPorSegundo > 0) {
+        const previousFloor = Math.floor(gameState.polvoras);
+        gameState.polvoras += gameState.polvoraPorSegundo * deltaSeconds;
+        const newFloor = Math.floor(gameState.polvoras);
+
+        if (newFloor !== previousFloor) {
+          updateUI();
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Inicializa interface e loop
+    updateUI();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
